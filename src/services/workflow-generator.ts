@@ -264,7 +264,7 @@ ${fieldsMapping}
     const workflow = JSON.parse(JSON.stringify(templateWorkflow)); // Deep clone
 
     // Apply customizations
-    workflow.nodes = workflow.nodes.map(node => {
+    workflow.nodes = workflow.nodes.map((node: N8nNode) => {
       if (customizations[node.name]) {
         return {
           ...node,
