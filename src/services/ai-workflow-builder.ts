@@ -1,14 +1,21 @@
 import OpenAI from 'openai';
 import type { IntentAnalysis, N8nWorkflow } from '@/types';
+import { N8nNodeRegistry, type NodeSearchResult } from './n8n-node-registry';
 
 type AIProvider = 'openai' | 'xai' | 'gemini' | 'anthropic' | 'deepseek';
 
 export class AIWorkflowBuilder {
   private client: any;
   private provider: AIProvider;
+  private nodeRegistry?: N8nNodeRegistry;
 
-  constructor(provider: AIProvider = 'openai', apiKey?: string) {
+  constructor(provider: AIProvider = 'openai', apiKey?: string, n8nUrl?: string, n8nApiKey?: string) {
     this.provider = provider;
+
+    // Initialize n8n node registry if credentials provided
+    if (n8nUrl && n8nApiKey) {
+      this.nodeRegistry = new N8nNodeRegistry(n8nUrl, n8nApiKey);
+    }
 
     if (provider === 'openai' || provider === 'xai' || provider === 'deepseek') {
       this.client = new OpenAI({
@@ -72,6 +79,12 @@ export class AIWorkflowBuilder {
 
   async buildWorkflow(analysis: IntentAnalysis, userInput: string, context7Context?: string): Promise<N8nWorkflow> {
     try {
+      // Get available nodes recommendations from n8n instance
+      let nodeRecommendations = '';
+      if (this.nodeRegistry) {
+        nodeRecommendations = await this.getNodeRecommendations(analysis, userInput);
+      }
+
       let content: string | null = null;
 
       const exampleWorkflow = {
@@ -143,6 +156,8 @@ export class AIWorkflowBuilder {
 ${JSON.stringify(analysis, null, 2)}
 
 사용자 요청: "${userInput}"
+
+${nodeRecommendations ? `\n## 🔍 사용 가능한 n8n 노드 (이 노드만 사용하세요)\n\n${nodeRecommendations}\n` : ''}
 
 ${context7Context ? `\n## 📚 Context7 가이드 (반드시 참고)\n\n${context7Context}\n` : ''}
 
@@ -463,6 +478,83 @@ ${JSON.stringify(
     } catch (error) {
       console.error('Failed to generate node descriptions:', error);
       return {};
+    }
+  }
+
+  /**
+   * Get node recommendations from n8n instance based on intent analysis
+   */
+  private async getNodeRecommendations(analysis: IntentAnalysis, userInput: string): Promise<string> {
+    if (!this.nodeRegistry) {
+      return '';
+    }
+
+    try {
+      const recommendations: string[] = [];
+
+      // 1. 트리거 노드 추천
+      const triggerService = analysis.trigger.service.toLowerCase();
+      const triggerNodes = await this.nodeRegistry.searchNodes(triggerService);
+
+      if (triggerNodes.length > 0) {
+        recommendations.push(`### ✅ 트리거 노드 (${analysis.trigger.service}용)\n`);
+        triggerNodes.slice(0, 3).forEach(node => {
+          recommendations.push(`- **${node.nodeName}**: ${node.displayName} - ${node.description}`);
+          if (node.isBuiltIn) {
+            recommendations.push(`  ✅ n8n 기본 내장 노드 (우선 사용)`);
+          }
+        });
+        recommendations.push('\n');
+      }
+
+      // 2. 액션 노드 추천 (required_nodes 기반)
+      for (const requiredNode of analysis.required_nodes) {
+        const keyword = requiredNode.replace('n8n-nodes-base.', '').replace('@n8n/', '');
+        const actionNodes = await this.nodeRegistry.searchNodes(keyword);
+
+        if (actionNodes.length > 0) {
+          recommendations.push(`### ✅ ${keyword} 관련 노드\n`);
+          actionNodes.slice(0, 3).forEach(node => {
+            recommendations.push(`- **${node.nodeName}**: ${node.displayName} - ${node.description}`);
+            if (node.isBuiltIn) {
+              recommendations.push(`  ✅ n8n 기본 내장 노드 (우선 사용)`);
+            }
+            if (node.category === 'ai') {
+              recommendations.push(`  ⭐ AI/LLM 작업에 최적화됨`);
+            }
+          });
+          recommendations.push('\n');
+        }
+      }
+
+      // 3. 사용자 요청 키워드 기반 추가 추천
+      const userKeywords = userInput.toLowerCase();
+      if (userKeywords.includes('slack')) {
+        const slackNodes = await this.nodeRegistry.searchNodes('slack');
+        if (slackNodes.length > 0 && !recommendations.some(r => r.includes('slack'))) {
+          recommendations.push(`### ✅ Slack 관련 노드\n`);
+          slackNodes.slice(0, 2).forEach(node => {
+            recommendations.push(`- **${node.nodeName}**: ${node.displayName}`);
+          });
+          recommendations.push('\n');
+        }
+      }
+
+      if (recommendations.length === 0) {
+        return '';
+      }
+
+      recommendations.unshift(`\n**🎯 노드 선택 우선순위**:\n`);
+      recommendations.unshift(`1순위: ✅ n8n 기본 내장 노드 (nodes-base.*)\n`);
+      recommendations.unshift(`2순위: n8n 공식 커뮤니티 노드\n`);
+      recommendations.unshift(`3순위: HTTP Request 노드로 API 직접 호출\n`);
+      recommendations.unshift(`4순위: Code 노드로 커스텀 로직 구현\n\n`);
+      recommendations.unshift(`⚠️ **위 목록에 없는 노드는 절대 사용하지 마세요!**\n\n`);
+
+      return recommendations.join('\n');
+    } catch (error) {
+      console.error('Failed to get node recommendations:', error);
+      return '';
     }
   }
 }

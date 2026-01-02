@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
     const provider = (request.headers.get('x-ai-provider') || 'openai') as 'openai' | 'xai' | 'gemini' | 'anthropic' | 'deepseek';
     const apiKey = request.headers.get('x-api-key');
     const context7ApiKey = request.headers.get('x-context7-api-key');
+    const n8nUrl = request.headers.get('x-n8n-url');
+    const n8nApiKey = request.headers.get('x-n8n-api-key');
 
     // Environment variable fallback
     const envKey =
@@ -52,7 +54,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const builder = new AIWorkflowBuilder(provider, apiKey || envKey);
+    // Create workflow builder with n8n credentials if available
+    const finalN8nUrl = n8nUrl || process.env.N8N_INSTANCE_URL;
+    const finalN8nApiKey = n8nApiKey || process.env.N8N_API_KEY;
+
+    const builder = new AIWorkflowBuilder(
+      provider,
+      apiKey || envKey,
+      finalN8nUrl || undefined,
+      finalN8nApiKey || undefined
+    );
+
+    console.log('🔍 n8n Node Registry:', finalN8nUrl && finalN8nApiKey ? 'Enabled' : 'Disabled (using fallback nodes)');
+
     const workflow = await builder.buildWorkflow(
       intent_analysis as IntentAnalysis,
       user_input || '',

@@ -55,6 +55,9 @@ export function ChatInterface() {
       const geminiKey = localStorage.getItem('gemini_api_key');
       const anthropicKey = localStorage.getItem('anthropic_api_key');
       const deepseekKey = localStorage.getItem('deepseek_api_key');
+      const context7Key = localStorage.getItem('context7_api_key') || '';
+      const n8nUrl = localStorage.getItem('n8n_instance_url') || '';
+      const n8nApiKey = localStorage.getItem('n8n_api_key') || '';
 
       // Select the appropriate API key based on provider
       let apiKey = '';
@@ -187,6 +190,8 @@ export function ChatInterface() {
       const anthropicKey = localStorage.getItem('anthropic_api_key');
       const deepseekKey = localStorage.getItem('deepseek_api_key');
       const context7Key = localStorage.getItem('context7_api_key');
+      const n8nUrl = localStorage.getItem('n8n_instance_url');
+      const n8nApiKey = localStorage.getItem('n8n_api_key');
 
       let apiKey = '';
       if (aiProvider === 'openai') apiKey = openaiKey || '';
@@ -203,6 +208,14 @@ export function ChatInterface() {
       // Add Context7 API key if available
       if (context7Key) {
         headers['x-context7-api-key'] = context7Key;
+      }
+
+      // Add n8n credentials for node registry
+      if (n8nUrl) {
+        headers['x-n8n-url'] = n8nUrl;
+      }
+      if (n8nApiKey) {
+        headers['x-n8n-api-key'] = n8nApiKey;
       }
 
       const workflowResponse = await axios.post('/api/generate-workflow', {
@@ -229,10 +242,7 @@ export function ChatInterface() {
 
       setMessages(prev => [...prev, workflowMessage]);
 
-      // 3. n8n에 자동 배포 시도 (설정되어 있다면)
-      const n8nUrl = localStorage.getItem('n8n_instance_url');
-      const n8nApiKey = localStorage.getItem('n8n_api_key');
-
+      // 3. n8n에 자동 배포 시도 (설정되어 있다면) - use variables from above
       if (n8nUrl && n8nApiKey) {
         await handleDeployWorkflow(workflowData.workflow_json, n8nUrl, n8nApiKey);
       } else {
