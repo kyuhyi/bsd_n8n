@@ -27,20 +27,46 @@ export class AIWorkflowBuilder {
 
   private systemPrompt = `당신은 n8n 워크플로우 JSON을 생성하는 전문가입니다.
 
-중요한 규칙:
-1. 모든 노드는 실제로 실행 가능해야 합니다
-2. 필수 파라미터를 모두 포함해야 합니다
-3. 노드 연결(connections)이 정확해야 합니다
-4. position은 반드시 [숫자, 숫자] 형태여야 합니다
+⚠️ **절대 규칙 - 반드시 지켜야 함**:
+1. **커스텀 노드 절대 금지**: 존재하지 않는 노드 타입을 만들지 마세요
+2. **기본 노드만 사용**: 아래 공식 n8n 노드만 사용 가능합니다
+3. 모든 노드는 실제로 실행 가능해야 합니다
+4. 필수 파라미터를 모두 포함해야 합니다
+5. 노드 연결(connections)이 정확해야 합니다
+6. position은 반드시 [숫자, 숫자] 형태여야 합니다
 
-n8n 노드 타입 예시:
-- n8n-nodes-base.webhook (Webhook 트리거)
-- n8n-nodes-base.gmail (Gmail 트리거/액션)
+✅ **사용 가능한 공식 n8n 노드 (이것만 사용하세요)**:
+
+**트리거 노드**:
+- n8n-nodes-base.webhook (Webhook HTTP 요청)
+- n8n-nodes-base.emailReadImap (Gmail/이메일 읽기)
+- n8n-nodes-base.scheduleTrigger (스케줄/Cron)
+- n8n-nodes-base.manualTrigger (수동 실행)
+
+**액션 노드**:
 - n8n-nodes-base.slack (Slack 메시지)
+- n8n-nodes-base.gmail (Gmail 전송)
 - n8n-nodes-base.googleSheets (Google Sheets)
+- n8n-nodes-base.discord (Discord)
+- n8n-nodes-base.telegram (Telegram)
+- n8n-nodes-base.notion (Notion)
 - n8n-nodes-base.httpRequest (HTTP 요청)
-- n8n-nodes-base.code (Code 노드 - 데이터 변환용)
-- n8n-nodes-base.set (Set 노드 - 데이터 설정용)
+
+**데이터 처리 노드**:
+- n8n-nodes-base.code (JavaScript/Python 코드)
+- n8n-nodes-base.set (데이터 설정)
+- n8n-nodes-base.itemLists (배열/리스트 처리)
+
+**AI/LLM 노드** (AI 작업시 우선 사용):
+- @n8n/n8n-nodes-langchain.agent (AI Agent - 추천)
+- @n8n/n8n-nodes-langchain.lmChatGoogleGemini (Google Gemini)
+- @n8n/n8n-nodes-langchain.lmChatOpenAi (OpenAI GPT)
+- @n8n/n8n-nodes-langchain.lmChatAnthropic (Claude)
+
+❌ **절대 하지 마세요**:
+- 커스텀 노드 생성 금지 (예: "Google Translate", "Analyze Feedback" 같은 존재하지 않는 노드)
+- 위 목록에 없는 노드 타입 사용 금지
+- 노드 이름을 임의로 만들지 마세요
 
 완전하고 실행 가능한 n8n 워크플로우 JSON만 반환하세요.`;
 
@@ -118,23 +144,32 @@ ${JSON.stringify(analysis, null, 2)}
 
 사용자 요청: "${userInput}"
 
-${context7Context ? `\n## 📚 최신 라이브러리 정보 (Context7)\n\n${context7Context}\n\n**중요**: 위의 최신 문서와 정보를 참고하여 정확한 파라미터와 설정을 사용하세요!\n` : ''}
+${context7Context ? `\n## 📚 Context7 가이드 (반드시 참고)\n\n${context7Context}\n` : ''}
 
-위 분석을 바탕으로 완전히 실행 가능한 n8n 워크플로우 JSON을 생성하세요.
+⚠️ **경고: 커스텀 노드 절대 금지**
+- "Google Translate", "Analyze Feedback", "Process Gemini Output" 같은 노드는 존재하지 않습니다
+- System Prompt에 명시된 공식 n8n 노드만 사용하세요
+- AI 작업은 반드시 \`@n8n/n8n-nodes-langchain.agent\` 또는 Chat Model 노드 사용
+- 번역/분석 등은 \`n8n-nodes-base.code\` 노드에서 API 호출하거나 AI Agent 노드 사용
 
 참고 예시:
 ${JSON.stringify(exampleWorkflow, null, 2)}
 
-요구사항:
-1. Trigger 노드 1개 (id, type, typeVersion, position, parameters, name 모두 포함)
-2. 데이터 변환이 필요하면 Code 노드 추가
-3. Action 노드들 (Slack, Gmail, Google Sheets 등)
-4. 모든 노드 간 connections 정확히 설정
-5. position은 [x좌표, y좌표] 형태 (x는 200씩 증가, y는 300 고정)
-6. settings 필드 필수 포함: {"executionOrder": "v1"}
-${context7Context ? '7. **Context7 최신 정보를 반드시 활용**하여 정확한 버전과 파라미터 사용\n' : ''}
+✅ **요구사항**:
+1. **트리거 노드**: 반드시 \`n8n-nodes-base.webhook\`, \`n8n-nodes-base.manualTrigger\` 등 공식 트리거만 사용
+2. **데이터 처리**: \`n8n-nodes-base.code\` 노드로 변환/가공
+3. **AI 작업**: \`@n8n/n8n-nodes-langchain.agent\` + Chat Model 노드 조합
+4. **액션 노드**: \`n8n-nodes-base.slack\`, \`n8n-nodes-base.gmail\` 등 공식 노드만
+5. **connections**: 모든 노드 간 연결 정확히 설정
+6. **position**: [x좌표, y좌표] 형태 (x는 200씩 증가)
+7. **settings**: {"executionOrder": "v1"} 필수
 
-**중요**: 반드시 settings 필드를 포함해야 합니다!
+${context7Context ? '8. **Context7 가이드 준수**: 위 가이드에서 추천한 노드를 정확히 사용\n' : ''}
+
+**최종 체크리스트**:
+- [ ] 모든 노드가 System Prompt의 공식 노드 목록에 있는가?
+- [ ] 커스텀 노드를 만들지 않았는가?
+- [ ] AI 작업시 AI Agent 노드를 사용했는가?
 
 JSON만 반환하세요 (설명 없이):`;
 
