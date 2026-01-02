@@ -1,0 +1,152 @@
+{
+  "name": "퍼널형 랜딩페이지 자동알림",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "landing-form",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "responseCode": 200,
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "랜딩페이지 폼 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-336, 320],
+      "webhookId": "landing-form-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.item.json;\nconst body = inputData.body || inputData;\n\nconsole.log('받은 데이터:', JSON.stringify(body, null, 2));\n\nconst name = body.name || '';\nconst email = body.email || '';\nconst phone = body.phone || '';\n\nif (!name || !email) {\n  return { success: false, message: '이름과 이메일은 필수입니다' };\n}\n\nreturn {\n  success: true,\n  message: '구독 신청이 완료되었습니다',\n  data: {\n    name: name,\n    email: email,\n    phone: phone,\n    timestamp: body.timestamp || new Date().toISOString(),\n    source: body.source || 'unknown'\n  }\n};"
+      },
+      "id": "data-validator",
+      "name": "데이터 검증",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-100, 320]
+    },
+    {
+      "parameters": {
+        "id": 8473174,
+        "email": "={{ $json.data.email }}",
+        "additionalFields": {
+          "firstName": "={{ $json.data.name }}"
+        }
+      },
+      "id": "convertkit-node",
+      "name": "ConvertKit 구독자 추가",
+      "type": "n8n-nodes-base.convertKit",
+      "typeVersion": 1,
+      "position": [150, 320],
+      "credentials": {
+        "convertKitApi": {
+          "id": "xXe5lxnEOPnSpOkK",
+          "name": "ConvertKit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1YMRIXQpEcMK2gQb5zU6XnDKLrHbbW7vKZ0iOe_V8Ozc",
+          "mode": "list",
+          "cachedResultName": "n8n 랜딩페이지"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "신청날짜": "={{ new Date().toISOString().split('T')[0] }}",
+            "이름": "={{ $('데이터 검증').item.json.data.name }}",
+            "전화번호": "='{{ $('데이터 검증').item.json.data.phone }}",
+            "이메일": "={{ $('데이터 검증').item.json.data.email }}"
+          },
+          "schema": [
+            {"id": "신청날짜", "displayName": "신청날짜", "type": "string"},
+            {"id": "이름", "displayName": "이름", "type": "string"},
+            {"id": "전화번호", "displayName": "전화번호", "type": "string"},
+            {"id": "이메일", "displayName": "이메일", "type": "string"}
+          ]
+        }
+      },
+      "id": "sheets-node",
+      "name": "Google Sheets 저장",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [400, 320],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "U7Vt55tnZvJ8dySm",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('데이터 검증').item.json.data.email }}",
+        "subject": "✅ 신청이 완료되었습니다!",
+        "message": "={{ $('데이터 검증').item.json.data.name }}님, 안녕하세요!\n\n신청해 주셔서 감사합니다.\n신청이 정상적으로 완료되었습니다.\n\n곧 연락드리겠습니다.\n\n감사합니다.",
+        "options": {}
+      },
+      "id": "gmail-user-node",
+      "name": "신청자에게 확인 이메일",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [650, 420],
+      "webhookId": "73fd9463-b4de-4c03-8f6f-00599ba915c7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RhzJ7XHmmtV2Upw4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "from": "01097482040",
+        "text": "={{ $('데이터 검증').item.json.data.name }}님, 신청하신 AI 바이브코딩 비밀특강이 이메일로 전송되었습니다! 비밀특강 영상 https://www.bsdclass.co.kr/31 "
+      },
+      "type": "n8n-nodes-solapi.solapi",
+      "typeVersion": 1,
+      "position": [650, 220],
+      "id": "50a32a25-0572-49b7-8e40-0c2b89ddae06",
+      "name": "Send text message a message",
+      "credentials": {
+        "solapiApiKeyApi": {
+          "id": "69OvKQBQqqXcMvXj",
+          "name": "Solapi Key account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "랜딩페이지 폼 수신": {
+      "main": [[{ "node": "데이터 검증", "type": "main", "index": 0 }]]
+    },
+    "데이터 검증": {
+      "main": [[{ "node": "ConvertKit 구독자 추가", "type": "main", "index": 0 }]]
+    },
+    "ConvertKit 구독자 추가": {
+      "main": [[{ "node": "Google Sheets 저장", "type": "main", "index": 0 }]]
+    },
+    "Google Sheets 저장": {
+      "main": [[
+        { "node": "신청자에게 확인 이메일", "type": "main", "index": 0 },
+        { "node": "Send text message a message", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

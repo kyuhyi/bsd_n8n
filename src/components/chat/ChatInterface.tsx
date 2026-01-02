@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, CheckCircle2, XCircle, Settings, Check, X } from 'lucide-react';
+import { Send, Bot, User, Loader2, CheckCircle2, XCircle, Settings, Check, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { NewsletterModal } from '@/components/NewsletterModal';
 import type { ChatMessage, IntentAnalysis, N8nWorkflow } from '@/types';
 import axios from 'axios';
 
@@ -20,6 +21,7 @@ export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNewsletter, setShowNewsletter] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -184,6 +186,7 @@ export function ChatInterface() {
       const geminiKey = localStorage.getItem('gemini_api_key');
       const anthropicKey = localStorage.getItem('anthropic_api_key');
       const deepseekKey = localStorage.getItem('deepseek_api_key');
+      const context7Key = localStorage.getItem('context7_api_key');
 
       let apiKey = '';
       if (aiProvider === 'openai') apiKey = openaiKey || '';
@@ -192,15 +195,20 @@ export function ChatInterface() {
       else if (aiProvider === 'anthropic') apiKey = anthropicKey || '';
       else if (aiProvider === 'deepseek') apiKey = deepseekKey || '';
 
+      const headers: Record<string, string> = {
+        'x-ai-provider': aiProvider,
+        'x-api-key': apiKey
+      };
+
+      // Add Context7 API key if available
+      if (context7Key) {
+        headers['x-context7-api-key'] = context7Key;
+      }
+
       const workflowResponse = await axios.post('/api/generate-workflow', {
         intent_analysis: finalAnalysis,
         user_input: userInput || ''
-      }, {
-        headers: {
-          'x-ai-provider': aiProvider,
-          'x-api-key': apiKey
-        }
-      });
+      }, { headers });
 
       if (!workflowResponse.data.success) {
         throw new Error(workflowResponse.data.error?.message || '워크플로우 생성 실패');
@@ -297,15 +305,30 @@ export function ChatInterface() {
           <h1 className="text-2xl font-bold text-text-primary">BSD n8n AI Dev Studio</h1>
           <p className="text-sm text-text-secondary mt-1">AI가 n8n 워크플로우를 대신 만들어드립니다</p>
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setShowSettings(!showSettings)}
-          className="ml-4"
-        >
-          <Settings className="w-5 h-5" />
-        </Button>
+        <div className="flex gap-2 ml-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowNewsletter(true)}
+            className="flex items-center gap-2"
+          >
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">n8n 소식 받기</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
+
+      {/* Newsletter Modal */}
+      <NewsletterModal
+        isOpen={showNewsletter}
+        onClose={() => setShowNewsletter(false)}
+      />
 
       {/* Settings Panel */}
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
@@ -572,6 +595,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [geminiKey, setGeminiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [anthropicKey, setAnthropicKey] = useState(localStorage.getItem('anthropic_api_key') || '');
   const [deepseekKey, setDeepseekKey] = useState(localStorage.getItem('deepseek_api_key') || '');
+  const [context7Key, setContext7Key] = useState(localStorage.getItem('context7_api_key') || '');
   const [n8nUrl, setN8nUrl] = useState(localStorage.getItem('n8n_instance_url') || 'http://localhost:5678');
   const [n8nApiKey, setN8nApiKey] = useState(localStorage.getItem('n8n_api_key') || '');
 
@@ -582,6 +606,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
     localStorage.setItem('gemini_api_key', geminiKey);
     localStorage.setItem('anthropic_api_key', anthropicKey);
     localStorage.setItem('deepseek_api_key', deepseekKey);
+    localStorage.setItem('context7_api_key', context7Key);
     localStorage.setItem('n8n_instance_url', n8nUrl);
     localStorage.setItem('n8n_api_key', n8nApiKey);
     alert('✅ 설정이 저장되었습니다!');
@@ -717,7 +742,27 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <div>
+          {/* Context7 API Key */}
+          <div className="border-t border-border pt-4">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
+              📚 Context7 API Key (최신 라이브러리 정보)
+            </label>
+            <input
+              type="password"
+              value={context7Key}
+              onChange={(e) => setContext7Key(e.target.value)}
+              placeholder="ctx7sk-..."
+              className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
+            />
+            <p className="text-xs text-text-tertiary mt-1">
+              <a href="https://context7.com" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">
+                Context7에서 발급받기
+              </a>
+              {' '}• 최신 라이브러리 문서를 기반으로 정확한 워크플로우 생성
+            </p>
+          </div>
+
+          <div className="border-t border-border pt-4">
             <label className="block text-sm font-medium text-text-secondary mb-2">
               n8n Instance URL
             </label>

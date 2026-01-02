@@ -76,7 +76,7 @@ JSON 형식으로만 응답하세요.`;
         content = response.choices[0]?.message?.content;
       } else if (this.provider === 'gemini') {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.client.apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.client.apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -227,7 +227,7 @@ JSON 형식으로만 응답하세요.`;
         content = response.choices[0]?.message?.content;
       } else if (this.provider === 'gemini') {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.client.apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.client.apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -326,7 +326,7 @@ JSON 형식으로만 응답하세요.`;
       content = suggestionsResponse.choices[0]?.message?.content || '';
     } else if (this.provider === 'gemini') {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${this.client.apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.client.apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

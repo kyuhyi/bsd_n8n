@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIWorkflowBuilder } from '@/services/ai-workflow-builder';
+import { Context7Service } from '@/services/context7-service';
 import type { IntentAnalysis } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
     // Get AI provider and API key from headers
     const provider = (request.headers.get('x-ai-provider') || 'openai') as 'openai' | 'xai' | 'gemini' | 'anthropic' | 'deepseek';
     const apiKey = request.headers.get('x-api-key');
+    const context7ApiKey = request.headers.get('x-context7-api-key');
 
     // Environment variable fallback
     const envKey =
@@ -34,10 +36,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get Context7 enriched context if API key is provided
+    let context7Context = '';
+    if (context7ApiKey || process.env.CONTEXT7_API_KEY) {
+      try {
+        const context7 = new Context7Service(context7ApiKey || process.env.CONTEXT7_API_KEY!);
+        context7Context = await context7.getWorkflowContext(
+          user_input || '',
+          (intent_analysis as IntentAnalysis).required_nodes
+        );
+        console.log('✅ Context7 enriched context fetched:', context7Context.substring(0, 200));
+      } catch (error) {
+        console.warn('⚠️ Failed to fetch Context7 context, continuing without it:', error);
+        // Continue without Context7 context - it's optional
+      }
+    }
+
     const builder = new AIWorkflowBuilder(provider, apiKey || envKey);
     const workflow = await builder.buildWorkflow(
       intent_analysis as IntentAnalysis,
-      user_input || ''
+      user_input || '',
+      context7Context
     );
 
     return NextResponse.json({

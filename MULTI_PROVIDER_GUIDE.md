@@ -25,11 +25,11 @@ BSD n8n AI Dev Studio는 이제 5개의 주요 AI 제공업체를 지원합니�
 - **특징**: OpenAI SDK 호환 (baseURL만 변경)
 
 ### 4. **Google Gemini (2.5 Flash)**
-- **모델**: `gemini-2.0-flash-exp`
+- **모델**: `gemini-2.5-flash`
 - **장점**: 빠른 응답 속도, 무료 티어 제공
 - **API Key 발급**: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 - **요금**: 무료 티어 + Pay-as-you-go
-- **특징**: 멀티모달 지원, JSON 모드 기본 제공
+- **특징**: 멀티모달 지원, JSON 모드 기본 제공, 최신 안정 버전
 
 ### 5. **Anthropic (Claude)**
 - **모델**: `claude-3-5-sonnet-20241022`

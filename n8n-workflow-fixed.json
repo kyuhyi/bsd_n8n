@@ -1,0 +1,109 @@
+{
+  "name": "퍼널형 랜딩페이지 자동알림 (수정됨)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "landing-form",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "landing-form"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 안전하게 데이터 추출\nconst body = $input.item.json.body || $input.item.json;\n\n// 필수 필드 검증\nif (!body.name || !body.email) {\n  throw new Error('이름과 이메일은 필수입니다');\n}\n\n// 데이터 정제 및 반환\nreturn {\n  name: body.name || '',\n  email: body.email || '',\n  phone: body.phone || '',\n  timestamp: body.timestamp || new Date().toISOString(),\n  source: body.source || 'unknown'\n};"
+      },
+      "id": "code-node",
+      "name": "데이터 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "=🔔 **새로운 n8n 소식 구독 신청**\n\n👤 이름: {{ $json.name }}\n📧 이메일: {{ $json.email }}\n📱 전화번호: {{ $json.phone }}\n⏰ 신청시간: {{ $json.timestamp }}\n📍 출처: {{ $json.source }}",
+        "otherOptions": {}
+      },
+      "id": "slack-node",
+      "name": "Slack 알림",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [650, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"구독 신청이 완료되었습니다\", \"data\": { \"name\": $json.name, \"email\": $json.email } } }}"
+      },
+      "id": "response-node",
+      "name": "응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "데이터 처리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "데이터 처리": {
+      "main": [
+        [
+          {
+            "node": "Slack 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack 알림": {
+      "main": [
+        [
+          {
+            "node": "응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-01-02T08:24:00.000Z",
+  "versionId": "1"
+}
