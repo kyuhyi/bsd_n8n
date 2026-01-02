@@ -334,12 +334,24 @@ JSON만 반환하세요 (설명 없이):`;
 - 의도: ${analysis.intent}
 - 트리거: ${analysis.trigger.service} - ${analysis.trigger.event}
 
-다음 각 노드에 대해 한국어로 간단명료한 설명을 작성하세요 (각 노드당 2-3줄):
+다음 각 노드에 대해 **초보자도 이해할 수 있는** 한국어 설명을 작성하세요:
 
 ${nonStickyNodes.map((node, i) => `${i + 1}. **${node.name}** (${node.type})
    Parameters: ${JSON.stringify(node.parameters || {}).substring(0, 100)}`).join('\n\n')}
 
-각 노드의 역할, 설정 내용, 주의사항을 포함하세요.
+**설명 작성 규칙**:
+1. 각 노드당 3-5줄로 작성
+2. 노드의 역할과 무엇을 하는지 명확히 설명
+3. 필요한 설정값 설명
+4. **⚠️ 자격증명(Credentials) 설정이 필요한 경우 반드시 명시**
+   - 어떤 자격증명이 필요한지
+   - 어디서 발급받는지 (예: Google Cloud Console, Slack App 등)
+   - 설정 방법 간단 가이드
+5. 초보자가 직접 따라할 수 있도록 단계별로 설명
+
+**자격증명 설정 예시**:
+- Gmail 노드: "Google Cloud Console에서 OAuth2 자격증명 발급 → n8n 자격증명 메뉴에서 'Google OAuth2' 선택 → Client ID, Secret 입력"
+- Slack 노드: "Slack App 생성 → Bot Token Scopes 권한 설정 → Bot User OAuth Token 복사 → n8n에서 'Slack OAuth2' 자격증명 추가"
 
 JSON 형식으로 반환:
 ${JSON.stringify(
