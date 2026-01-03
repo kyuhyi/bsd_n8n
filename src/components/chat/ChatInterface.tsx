@@ -600,25 +600,39 @@ function WorkflowPreview({ workflow }: { workflow: N8nWorkflow }) {
 
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [aiProvider, setAiProvider] = useState(localStorage.getItem('ai_provider') || 'openai');
-  const [openaiKey, setOpenaiKey] = useState(localStorage.getItem('openai_api_key') || '');
-  const [xaiKey, setXaiKey] = useState(localStorage.getItem('xai_api_key') || '');
-  const [geminiKey, setGeminiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-  const [anthropicKey, setAnthropicKey] = useState(localStorage.getItem('anthropic_api_key') || '');
-  const [deepseekKey, setDeepseekKey] = useState(localStorage.getItem('deepseek_api_key') || '');
-  const [context7Key, setContext7Key] = useState(localStorage.getItem('context7_api_key') || '');
+
+  // Check if keys exist in localStorage (for showing indicators)
+  const hasOpenaiKey = !!localStorage.getItem('openai_api_key');
+  const hasXaiKey = !!localStorage.getItem('xai_api_key');
+  const hasGeminiKey = !!localStorage.getItem('gemini_api_key');
+  const hasAnthropicKey = !!localStorage.getItem('anthropic_api_key');
+  const hasDeepseekKey = !!localStorage.getItem('deepseek_api_key');
+  const hasContext7Key = !!localStorage.getItem('context7_api_key');
+  const hasN8nApiKey = !!localStorage.getItem('n8n_api_key');
+
+  // State for input values (empty by default - never show stored keys)
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [xaiKey, setXaiKey] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [anthropicKey, setAnthropicKey] = useState('');
+  const [deepseekKey, setDeepseekKey] = useState('');
+  const [context7Key, setContext7Key] = useState('');
   const [n8nUrl, setN8nUrl] = useState(localStorage.getItem('n8n_instance_url') || 'http://localhost:5678');
-  const [n8nApiKey, setN8nApiKey] = useState(localStorage.getItem('n8n_api_key') || '');
+  const [n8nApiKey, setN8nApiKey] = useState('');
 
   const handleSave = () => {
     localStorage.setItem('ai_provider', aiProvider);
-    localStorage.setItem('openai_api_key', openaiKey);
-    localStorage.setItem('xai_api_key', xaiKey);
-    localStorage.setItem('gemini_api_key', geminiKey);
-    localStorage.setItem('anthropic_api_key', anthropicKey);
-    localStorage.setItem('deepseek_api_key', deepseekKey);
-    localStorage.setItem('context7_api_key', context7Key);
+
+    // Only save keys if user entered new values
+    if (openaiKey) localStorage.setItem('openai_api_key', openaiKey);
+    if (xaiKey) localStorage.setItem('xai_api_key', xaiKey);
+    if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
+    if (anthropicKey) localStorage.setItem('anthropic_api_key', anthropicKey);
+    if (deepseekKey) localStorage.setItem('deepseek_api_key', deepseekKey);
+    if (context7Key) localStorage.setItem('context7_api_key', context7Key);
+    if (n8nApiKey) localStorage.setItem('n8n_api_key', n8nApiKey);
+
     localStorage.setItem('n8n_instance_url', n8nUrl);
-    localStorage.setItem('n8n_api_key', n8nApiKey);
     alert('✅ 설정이 저장되었습니다!');
     onClose();
   };
@@ -651,13 +665,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {aiProvider === 'openai' && (
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                OpenAI API Key
+                OpenAI API Key {hasOpenaiKey && <span className="text-green-500">✓ 저장됨</span>}
               </label>
               <input
                 type="password"
                 value={openaiKey}
                 onChange={(e) => setOpenaiKey(e.target.value)}
-                placeholder="sk-..."
+                placeholder={hasOpenaiKey ? "새 키를 입력하려면 여기에 입력하세요" : "sk-..."}
                 className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
               <p className="text-xs text-text-tertiary mt-1">
@@ -672,13 +686,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {aiProvider === 'xai' && (
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                xAI API Key
+                xAI API Key {hasXaiKey && <span className="text-green-500">✓ 저장됨</span>}
               </label>
               <input
                 type="password"
                 value={xaiKey}
                 onChange={(e) => setXaiKey(e.target.value)}
-                placeholder="xai-..."
+                placeholder={hasXaiKey ? "새 키를 입력하려면 여기에 입력하세요" : "xai-..."}
                 className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
               <p className="text-xs text-text-tertiary mt-1">
@@ -693,13 +707,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {aiProvider === 'gemini' && (
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                Google Gemini API Key
+                Google Gemini API Key {hasGeminiKey && <span className="text-green-500">✓ 저장됨</span>}
               </label>
               <input
                 type="password"
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIza..."
+                placeholder={hasGeminiKey ? "새 키를 입력하려면 여기에 입력하세요" : "AIza..."}
                 className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
               <p className="text-xs text-text-tertiary mt-1">
@@ -714,13 +728,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {aiProvider === 'anthropic' && (
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                Anthropic API Key
+                Anthropic API Key {hasAnthropicKey && <span className="text-green-500">✓ 저장됨</span>}
               </label>
               <input
                 type="password"
                 value={anthropicKey}
                 onChange={(e) => setAnthropicKey(e.target.value)}
-                placeholder="sk-ant-..."
+                placeholder={hasAnthropicKey ? "새 키를 입력하려면 여기에 입력하세요" : "sk-ant-..."}
                 className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
               <p className="text-xs text-text-tertiary mt-1">
@@ -735,13 +749,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {aiProvider === 'deepseek' && (
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                DeepSeek API Key
+                DeepSeek API Key {hasDeepseekKey && <span className="text-green-500">✓ 저장됨</span>}
               </label>
               <input
                 type="password"
                 value={deepseekKey}
                 onChange={(e) => setDeepseekKey(e.target.value)}
-                placeholder="sk-..."
+                placeholder={hasDeepseekKey ? "새 키를 입력하려면 여기에 입력하세요" : "sk-..."}
                 className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
               <p className="text-xs text-text-tertiary mt-1">
@@ -755,13 +769,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {/* Context7 API Key */}
           <div className="border-t border-border pt-4">
             <label className="block text-sm font-medium text-text-secondary mb-2">
-              📚 Context7 API Key (최신 라이브러리 정보)
+              📚 Context7 API Key (최신 라이브러리 정보) {hasContext7Key && <span className="text-green-500">✓ 저장됨</span>}
             </label>
             <input
               type="password"
               value={context7Key}
               onChange={(e) => setContext7Key(e.target.value)}
-              placeholder="ctx7sk-..."
+              placeholder={hasContext7Key ? "새 키를 입력하려면 여기에 입력하세요" : "ctx7sk-..."}
               className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
             />
             <p className="text-xs text-text-tertiary mt-1">
@@ -787,13 +801,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-2">
-              n8n API Key
+              n8n API Key {hasN8nApiKey && <span className="text-green-500">✓ 저장됨</span>}
             </label>
             <input
               type="password"
               value={n8nApiKey}
               onChange={(e) => setN8nApiKey(e.target.value)}
-              placeholder="n8n API Key"
+              placeholder={hasN8nApiKey ? "새 키를 입력하려면 여기에 입력하세요" : "n8n API Key"}
               className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
             />
           </div>
